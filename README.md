@@ -1,1 +1,1 @@
-Uygulama başarıyla derlendi. APK ve Web sürümü burada!
+Uygulama başarıyla derlendi. APK (ARM64) ve Web sürümü burada!
