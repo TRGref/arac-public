@@ -20,15 +20,191 @@
   <link rel="manifest" href="manifest.json">
   
   <style>
+    html,
     body {
       background-color: #0F172A;
+      color: #E5EDF8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      height: 100%;
       margin: 0;
       padding: 0;
       overflow: hidden;
     }
+
+    .app-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at top, rgba(45, 212, 191, 0.16), transparent 34rem),
+        #0F172A;
+      transition: opacity 220ms ease, visibility 220ms ease;
+    }
+
+    .app-loader.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .loader-card {
+      width: min(86vw, 340px);
+      text-align: center;
+    }
+
+    .loader-logo {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 22px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #14B8A6, #2563EB);
+      box-shadow: 0 18px 42px rgba(20, 184, 166, 0.22);
+      display: grid;
+      place-items: center;
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .loader-title {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .loader-text {
+      min-height: 22px;
+      margin: 10px 0 24px;
+      color: rgba(229, 237, 248, 0.72);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .loader-progress {
+      position: relative;
+      height: 4px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(229, 237, 248, 0.14);
+    }
+
+    .loader-progress::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      width: 42%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #14B8A6, #60A5FA);
+      animation: loader-slide 1.1s ease-in-out infinite;
+    }
+
+    .loader-retry {
+      display: none;
+      width: 100%;
+      margin-top: 18px;
+      border: 0;
+      border-radius: 14px;
+      padding: 13px 16px;
+      background: #14B8A6;
+      color: #07111F;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .app-loader.has-error .loader-progress {
+      display: none;
+    }
+
+    .app-loader.has-error .loader-retry {
+      display: block;
+    }
+
+    @keyframes loader-slide {
+      0% {
+        transform: translateX(-110%);
+      }
+      100% {
+        transform: translateX(250%);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .loader-progress::after {
+        animation: none;
+        transform: none;
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
+  <div id="app-loader" class="app-loader" role="status" aria-live="polite">
+    <div class="loader-card">
+      <div class="loader-logo" aria-hidden="true">Y</div>
+      <h1 class="loader-title">YolMasraf</h1>
+      <p id="loader-text" class="loader-text">Uygulama yukleniyor...</p>
+      <div class="loader-progress" aria-hidden="true"></div>
+      <button id="loader-retry" class="loader-retry" type="button">Tekrar dene</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var loader = document.getElementById('app-loader');
+      var text = document.getElementById('loader-text');
+      var retry = document.getElementById('loader-retry');
+      var hasLoaded = false;
+
+      function hideLoader() {
+        hasLoaded = true;
+        loader.classList.add('is-hidden');
+        window.setTimeout(function () {
+          if (loader && loader.parentNode) {
+            loader.parentNode.removeChild(loader);
+          }
+        }, 300);
+      }
+
+      function showError(message) {
+        if (hasLoaded) return;
+        loader.classList.add('has-error');
+        text.textContent = message;
+      }
+
+      window.addEventListener('flutter-first-frame', hideLoader);
+      window.addEventListener('error', function (event) {
+        var source = event.filename || '';
+        if (source.indexOf('flutter_bootstrap') !== -1 || source.indexOf('main.dart') !== -1) {
+          showError('Uygulama yuklenemedi. Internet baglantinizi kontrol edip tekrar deneyin.');
+        }
+      });
+      window.addEventListener('unhandledrejection', function () {
+        showError('Uygulama baslatilirken sorun olustu. Sayfayi yenileyip tekrar deneyin.');
+      });
+
+      retry.addEventListener('click', function () {
+        window.location.reload();
+      });
+
+      window.setTimeout(function () {
+        showError('Yukleme beklenenden uzun surdu. iOS Safari kullaniyorsaniz sayfayi yenilemeyi deneyin.');
+      }, 18000);
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          registrations.forEach(function (registration) {
+            registration.unregister();
+          });
+        }).catch(function () {});
+      }
+    })();
+  </script>
+
   <script src="flutter_bootstrap.js?v=1.0.154" async></script>
 </body>
 </html>
